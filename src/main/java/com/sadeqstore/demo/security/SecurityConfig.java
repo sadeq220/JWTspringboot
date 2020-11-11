@@ -27,6 +27,7 @@ public SecurityConfig(JWTTokenFilterConfigurer jwtTokenFilterConfigurer){
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.authorizeRequests().antMatchers("/admin/**").hasRole("ADMIN");
         //http.authorizeRequests().antMatchers("/actuator/**").hasRole("ADMIN");
+        http.authorizeRequests().antMatchers("/client/**").hasAnyRole("NORMAL","ADMIN");
         http.apply(jwtTokenFilterConfigurer);
     }
     @Override

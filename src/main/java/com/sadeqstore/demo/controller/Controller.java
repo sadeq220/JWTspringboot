@@ -1,21 +1,27 @@
 package com.sadeqstore.demo.controller;
 
+import com.sadeqstore.demo.model.Product;
 import com.sadeqstore.demo.model.User;
+import com.sadeqstore.demo.repository.MyRepository;
 import com.sadeqstore.demo.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RequestMapping(value = "/")
 @RestController
 public class Controller {
     private UserService userService;
+    private MyRepository pRepository;
     @Autowired
-    public Controller(UserService userService){
+    public Controller(UserService userService, MyRepository pRepository){
         this.userService=userService;
+        this.pRepository=pRepository;
     }
     @GetMapping(value = "health")
-    public String getSession(){
+    public String getSure(){
         return "nothing";
     }
 
@@ -38,5 +44,24 @@ public class Controller {
     @DeleteMapping(value = "admin/delete-user/{username}")
     public String delUser(@PathVariable String username){
         return userService.delete(username).toString();
+    }
+
+    @DeleteMapping(value = "admin/delete-p/{product}")
+    public String delPs(@PathVariable String product){
+    return pRepository.deleteByName(product).toString();
+    }
+    @PutMapping(value="admin/update-p/{product}")
+    public String updateP(@PathVariable(name = "product") String productName,@RequestBody Product product){
+    return pRepository.updateP(productName,product.getName(),product.getCost()).toString();
+    }
+    @PostMapping(value = "admin/add-p")
+    public String addP(@RequestBody Product product){
+    return pRepository.save(product).getName();
+    }
+
+    @GetMapping(value = "client/all-p")
+    //use some thing like localhost:8080/client/all-p?like=%25sara%25
+    public List<Product> allP(@RequestParam(name = "like") String regexName){
+        return pRepository.findAllByNameLike(regexName);
     }
 }
