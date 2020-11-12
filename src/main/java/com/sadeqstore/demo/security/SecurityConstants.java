@@ -7,7 +7,7 @@ import org.springframework.stereotype.Component;
 public class SecurityConstants {
     @Value("${security.secret:SadeqPasswd}")
      String SECRET;
-    @Value("${security.header:authorization}")
+    @Value("${security.header:Authorization}")
      String HEADER_STRING;
     @Value("${security.expire-length:3600000}")
      Long ValidityInMilliSeconds;//1h
