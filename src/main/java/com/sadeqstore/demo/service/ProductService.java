@@ -1,15 +1,15 @@
 package com.sadeqstore.demo.service;
 
 import com.sadeqstore.demo.model.Product;
-import com.sadeqstore.demo.repository.MyRepository;
+import com.sadeqstore.demo.repository.PsRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 @Service
 public class ProductService {
-    private MyRepository pRepository;
+    private PsRepository pRepository;
     @Autowired
-    public ProductService(MyRepository pRepository){
+    public ProductService(PsRepository pRepository){
         this.pRepository=pRepository;
     }
     public Integer deleteP(String name){

@@ -4,12 +4,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.sadeqstore.demo.model.Product;
 import com.sadeqstore.demo.model.User;
-import com.sadeqstore.demo.repository.MyRepository;
+import com.sadeqstore.demo.repository.PsRepository;
 import com.sadeqstore.demo.service.UserService;
-import io.swagger.annotations.ApiOperation;
-import io.swagger.annotations.ApiResponse;
-import io.swagger.annotations.ApiResponses;
-import io.swagger.annotations.Authorization;
+import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -22,12 +19,13 @@ import java.util.Properties;
 
 @RequestMapping(value = "/")
 @RestController
+@Api(tags = "users")
 public class Controller {
     private UserService userService;
-    private MyRepository pRepository;
+    private PsRepository pRepository;
     private ObjectMapper objectMapper;
     @Autowired
-    public Controller(UserService userService, MyRepository pRepository,ObjectMapper objectMapper){
+    public Controller(UserService userService, PsRepository pRepository, ObjectMapper objectMapper){
         this.userService=userService;
         this.pRepository=pRepository;
         this.objectMapper=objectMapper;
@@ -68,7 +66,7 @@ public class Controller {
     @ApiResponses(value = {//
             @ApiResponse(code = 400, message = "Something went wrong"),
             @ApiResponse(code = 422, message = "Username is already in use")})
-    public String signup(@RequestBody User user) {
+    public String signUp(@RequestBody User user) {
         return userService.signup(user);
     }
 

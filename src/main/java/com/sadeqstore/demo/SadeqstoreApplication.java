@@ -5,6 +5,7 @@ import com.sadeqstore.demo.model.Role;
 import com.sadeqstore.demo.model.User;
 import com.sadeqstore.demo.security.SecurityConfig;
 import com.sadeqstore.demo.service.UserService;
+import com.sadeqstore.demo.swaggerConfig.SwConfig;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -13,7 +14,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
 
 @SpringBootApplication
-@Import(SecurityConfig.class)
+@Import({SecurityConfig.class, SwConfig.class})
 public class SadeqstoreApplication{
 
     public static void main(String[] args) {

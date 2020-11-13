@@ -7,7 +7,7 @@ import javax.persistence.Id;
 public class Product {
     @Id
     private String name;
-    private Integer cost;
+    private Double cost;
 
     public String getName() {
         return name;
@@ -17,11 +17,11 @@ public class Product {
         this.name = name;
     }
 
-    public Integer getCost() {
+    public Double getCost() {
         return cost;
     }
 
-    public void setCost(Integer cost) {
+    public void setCost(Double cost) {
         this.cost = cost;
     }
 }

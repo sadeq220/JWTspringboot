@@ -12,7 +12,7 @@ import java.util.List;
 
 @Repository
 @Transactional
-public interface MyRepository extends JpaRepository<com.sadeqstore.demo.model.Product,String> {
+public interface PsRepository extends JpaRepository<com.sadeqstore.demo.model.Product,String> {
 
     @Override
     List<Product> findAll();
@@ -21,7 +21,7 @@ public interface MyRepository extends JpaRepository<com.sadeqstore.demo.model.Pr
 
     @Modifying
     @Query(value = "UPDATE ps p SET p.name=:pN,p.cost=:pC WHERE p.name=:pON")
-    Integer updateP(@Param(value = "pON") String oldName,@Param(value = "pN") String pName,@Param(value = "pC") Integer pCost);
+    Integer updateP(@Param(value = "pON") String oldName,@Param(value = "pN") String pName,@Param(value = "pC") Double pCost);
 
     @Override
     <S extends Product> S save(S s);

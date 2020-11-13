@@ -16,13 +16,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-@Configuration
 @EnableSwagger2
 public class SwConfig {
 
     @Bean
     public Docket swaggerCustomization(){
-        return new Docket(DocumentationType.SWAGGER_2).select()
+        return new Docket(DocumentationType.SWAGGER_2).groupName("REST endpoints").select()
                 //.paths(PathSelectors.ant("/actuator/**"))
                 .apis(RequestHandlerSelectors.basePackage("com.sadeqstore.demo.controller"))
                 .build().apiInfo(metadata())
