@@ -2,6 +2,7 @@ package com.sadeqstore.demo.swaggerConfig;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.core.Authentication;
 import springfox.documentation.service.*;
 import springfox.documentation.spi.service.contexts.SecurityContext;
 import springfox.documentation.builders.ApiInfoBuilder;
@@ -21,7 +22,8 @@ public class SwConfig {
 
     @Bean
     public Docket swaggerCustomization(){
-        return new Docket(DocumentationType.SWAGGER_2).groupName("REST endpoints").select()
+        return new Docket(DocumentationType.SWAGGER_2).groupName("REST endpoints")
+                .ignoredParameterTypes(Authentication.class).select()
                 //.paths(PathSelectors.ant("/actuator/**"))
                 .apis(RequestHandlerSelectors.basePackage("com.sadeqstore.demo.controller"))
                 .build().apiInfo(metadata())
