@@ -28,6 +28,7 @@ public SecurityConfig(JWTTokenFilterConfigurer jwtTokenFilterConfigurer){
         http.authorizeRequests().antMatchers("/admin/**").hasRole("ADMIN");
         //http.authorizeRequests().antMatchers("/actuator/**").hasRole("ADMIN");
         http.authorizeRequests().antMatchers("/client/**").hasAnyRole("NORMAL","ADMIN");
+        http.authorizeRequests().antMatchers("/order/*").hasRole("NORMAL");
         http.apply(jwtTokenFilterConfigurer);
     }
     @Override

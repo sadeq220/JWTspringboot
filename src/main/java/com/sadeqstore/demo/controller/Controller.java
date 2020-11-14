@@ -1,18 +1,28 @@
 package com.sadeqstore.demo.controller;
 
+import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ArrayNode;
+import com.fasterxml.jackson.databind.node.JsonNodeFactory;
+import com.fasterxml.jackson.databind.node.ObjectNode;
 import com.sadeqstore.demo.model.Product;
 import com.sadeqstore.demo.model.User;
+import com.sadeqstore.demo.paypalConfig.PayPalServiceProxy;
 import com.sadeqstore.demo.repository.PsRepository;
 import com.sadeqstore.demo.service.UserService;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Slice;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
+import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Properties;
@@ -24,11 +34,14 @@ public class Controller {
     private UserService userService;
     private PsRepository pRepository;
     private ObjectMapper objectMapper;
+    private PayPalServiceProxy payPalServiceProxy;
     @Autowired
-    public Controller(UserService userService, PsRepository pRepository, ObjectMapper objectMapper){
+    public Controller(UserService userService, PsRepository pRepository
+            , ObjectMapper objectMapper,PayPalServiceProxy proxy){
         this.userService=userService;
         this.pRepository=pRepository;
         this.objectMapper=objectMapper;
+        payPalServiceProxy=proxy;
     }
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<String> getSure(ResponseStatusException ex) throws JsonProcessingException {
@@ -108,14 +121,67 @@ public class Controller {
     return pRepository.save(product).getName();
     }
 
-    @GetMapping(value = "client/all-p")
+    @GetMapping(value = "client/p-name")
     @ApiOperation(value = "list all products by name,sql wildcards enabled")
     @ApiResponses(value = {
             @ApiResponse(code = 400, message = "Something went wrong"),
             @ApiResponse(code = 403, message = "Access denied"),
             @ApiResponse(code = 406, message = "Expired or invalid JWT token")})
     //use some thing like localhost:8080/client/all-p?like=%25sara%25
-    public List<Product> allP(@RequestParam(name = "like") String regexName){
+    public List<Product> pName(@RequestParam(name = "like") String regexName){
         return pRepository.findAllByNameLike(regexName);
+    }
+    @ApiOperation(value = "list all products,you can pass page num")
+    @ApiResponses(value = {
+            @ApiResponse(code = 400, message = "Something went wrong"),
+            @ApiResponse(code = 403, message = "Access denied"),
+            @ApiResponse(code = 406, message = "Expired or invalid JWT token")})
+    @GetMapping(value = "client/all-p")
+    public ResponseEntity<String> allP(@RequestParam(name = "page",defaultValue = "0")Integer pageN) throws JsonProcessingException {
+        Slice slice=pRepository.products(PageRequest.of(pageN,10));
+        Boolean next=slice.hasNext();
+        JsonNode arrayNode=objectMapper.readTree(objectMapper.writeValueAsString(slice.getContent()));
+        ObjectNode rootNode=objectMapper.createObjectNode();
+        rootNode.put("hasNext",next);
+        rootNode.set("Ps",arrayNode);
+       return ResponseEntity.ok(objectMapper.writeValueAsString(rootNode));
+    }
+    @ApiOperation(value = "client by product by name")
+    @ApiResponses(value = {
+            @ApiResponse(code = 400, message = "Something went wrong"),
+            @ApiResponse(code = 403, message = "Access denied"),
+            @ApiResponse(code = 406, message = "Expired or invalid JWT token"),
+            @ApiResponse(code = 409, message = "PayPal payment went wrong"),
+            @ApiResponse(code = 404, message = "Product not found")})
+    @GetMapping(value = "/order/{product}")
+    public String buyP(@PathVariable(name = "product") String productName
+                        ,@RequestParam(name = "desc",defaultValue = "nothing") String description){
+        Product product=pRepository.findByName(productName);
+        if(product==null)throw new ResponseStatusException(HttpStatus.NOT_FOUND,"product not found");
+      return payPalServiceProxy.payment(product.getCost(),description);
+    }
+    @ApiOperation(value = "client redirect to this url if payment was successful")
+    @ApiResponses(value = {
+            @ApiResponse(code = 400, message = "Something went wrong"),
+            //@ApiResponse(code = 403, message = "Access denied"),
+            //@ApiResponse(code = 406, message = "Expired or invalid JWT token"),
+            @ApiResponse(code = 409, message = "PayPal payment went wrong")})
+    @GetMapping(value = "order/pay/success")
+    public String successPay(@RequestParam(name = "paymentId")String paymentID
+                                ,@RequestParam(name = "PayerID")String payerID){
+        return payPalServiceProxy.successPay(paymentID,payerID);
+    }
+    @ApiOperation(value = "client redirect to this url if payment was canceled")
+    @ApiResponses(value = {
+            @ApiResponse(code = 400, message = "Something went wrong"),
+            //@ApiResponse(code = 403, message = "Access denied"),
+           // @ApiResponse(code = 406, message = "Expired or invalid JWT token"),
+            @ApiResponse(code = 409, message = "PayPal payment went wrong")})
+    @GetMapping(value="order/pay/cancel")
+    public String FailurePay(@RequestParam String token){
+        /**
+         *  :) database.save(principal.getName()+'messedUP')
+         */
+        return token;
     }
 }
