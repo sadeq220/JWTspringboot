@@ -1,4 +1,5 @@
 package com.sadeqstore.demo.security;
+import java.util.Arrays;
 import java.util.Date;
 
 import com.sadeqstore.demo.model.Role;
@@ -63,9 +64,9 @@ public JWTTokenProvider(MyUserDetails myUserDetails, SecurityConstants securityC
         }
     }
     public Authentication getAuthentication(String token) {
-        //Role role=Jwts.parser().setSigningKey(SecurityConstants.SECRET).parseClaimsJws(token).getBody().get("auth",Role.class);
-        UserDetails userDetails = myUserDetails.loadUserByUsername(getUsername(token));
-        return new UsernamePasswordAuthenticationToken(userDetails, "", userDetails.getAuthorities());
+        Role role=Enum.valueOf(Role.class,Jwts.parser().setSigningKey(securityConstants.SECRET).parseClaimsJws(token).getBody().get("auth",String.class));
+        //UserDetails userDetails = myUserDetails.loadUserByUsername(getUsername(token));
+        return new UsernamePasswordAuthenticationToken(getUsername(token), "", Arrays.asList(role));
     }
 
 }
