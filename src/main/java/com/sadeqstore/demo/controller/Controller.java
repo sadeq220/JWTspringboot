@@ -1,16 +1,17 @@
 package com.sadeqstore.demo.controller;
 
-import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ArrayNode;
-import com.fasterxml.jackson.databind.node.JsonNodeFactory;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.sadeqstore.demo.model.TokenBucket;
 import com.sadeqstore.demo.model.Product;
 import com.sadeqstore.demo.model.User;
+import com.sadeqstore.demo.model.UserDTO;
 import com.sadeqstore.demo.paypalConfig.PayPalServiceProxy;
 import com.sadeqstore.demo.repository.PsRepository;
+import com.sadeqstore.demo.repository.TokensRepository;
+import com.sadeqstore.demo.repository.UsersRepository;
 import com.sadeqstore.demo.service.UserService;
 import io.swagger.annotations.*;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,9 +23,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.security.Principal;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 @RequestMapping(value = "/")
@@ -35,13 +36,16 @@ public class Controller {
     private PsRepository pRepository;
     private ObjectMapper objectMapper;
     private PayPalServiceProxy payPalServiceProxy;
+    private TokensRepository tokensRepository;
     @Autowired
     public Controller(UserService userService, PsRepository pRepository
-            , ObjectMapper objectMapper,PayPalServiceProxy proxy){
+            , ObjectMapper objectMapper, PayPalServiceProxy proxy
+                , TokensRepository tokensRepository){
         this.userService=userService;
         this.pRepository=pRepository;
         this.objectMapper=objectMapper;
         payPalServiceProxy=proxy;
+        this.tokensRepository=tokensRepository;
     }
     @ExceptionHandler(ResponseStatusException.class)
     public ResponseEntity<String> getSure(ResponseStatusException ex) throws JsonProcessingException {
@@ -79,7 +83,11 @@ public class Controller {
     @ApiResponses(value = {//
             @ApiResponse(code = 400, message = "Something went wrong"),
             @ApiResponse(code = 422, message = "Username is already in use")})
-    public String signUp(@RequestBody User user) {
+    public String signUp(@RequestBody UserDTO userDTO) {
+        User user=new User();
+        user.setPassword(userDTO.password);
+        user.setName(userDTO.username);
+        user.setRole(userDTO.role);
         return userService.signup(user);
     }
 
@@ -155,11 +163,16 @@ public class Controller {
             @ApiResponse(code = 404, message = "Product not found")})
     @GetMapping(value = "/order/{product}")
     public String buyP(@PathVariable(name = "product") String productName
-                        ,@RequestParam(name = "desc",defaultValue = "nothing") String description){
+                        ,@RequestParam(name = "desc",defaultValue = "nothing") String description
+                            ,Authentication authentication){
         Product product=pRepository.findByName(productName);
         if(product==null)throw new ResponseStatusException(HttpStatus.NOT_FOUND,"product not found");
-      return payPalServiceProxy.payment(product.getCost(),description);
+        String url=payPalServiceProxy.payment(product.getCost(),description);
+        String token=payPalServiceProxy.getTokenFromUrl(url);
+        tokensRepository.save(new TokenBucket(productName,authentication.getName(),token));
+      return url;
     }
+
     @ApiOperation(value = "client redirect to this url if payment was successful")
     @ApiResponses(value = {
             @ApiResponse(code = 400, message = "Something went wrong"),
@@ -168,9 +181,20 @@ public class Controller {
             @ApiResponse(code = 409, message = "PayPal payment went wrong")})
     @GetMapping(value = "order/pay/success")
     public String successPay(@RequestParam(name = "paymentId")String paymentID
-                                ,@RequestParam(name = "PayerID")String payerID){
-        return payPalServiceProxy.successPay(paymentID,payerID);
+                                ,@RequestParam(name = "PayerID")String payerID
+                                    ,@RequestParam String token){
+        String result=payPalServiceProxy.successPay(paymentID,payerID);
+        if(result.equals("success")){
+            TokenBucket tokenBucket=tokensRepository.findByToken(token);
+           if(tokenBucket != null){
+           userService.updateUserPs(tokenBucket.getUsername(),new Product(tokenBucket.getProductName()));
+           tokensRepository.deleteByToken(token);
+            return "your product successfully bought";}
+           return "your token not valid anymore";
+        }
+        return "something went wrong , call help center for refund";
     }
+
     @ApiOperation(value = "client redirect to this url if payment was canceled")
     @ApiResponses(value = {
             @ApiResponse(code = 400, message = "Something went wrong"),
@@ -183,5 +207,16 @@ public class Controller {
          *  :) database.save(principal.getName()+'messedUP')
          */
         return token;
+    }
+    @ApiOperation(value = "each user can see his/her own profile only")
+    @ApiResponses(value = {
+            @ApiResponse(code = 400, message = "Something went wrong"),
+            @ApiResponse(code = 403, message = "Access denied"),
+            @ApiResponse(code = 406, message = "Expired or invalid JWT token")})
+    @GetMapping(value = "client/profile/{client-name}")
+    public User clientProfile(@PathVariable(name = "client-name")String username ){
+        User user=userService.getUser(username);
+        user.setPassword("");
+        return user;
     }
 }

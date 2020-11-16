@@ -1,5 +1,6 @@
 package com.sadeqstore.demo.service;
 
+import com.sadeqstore.demo.model.Product;
 import com.sadeqstore.demo.model.User;
 import com.sadeqstore.demo.repository.UsersRepository;
 import com.sadeqstore.demo.security.JWTTokenProvider;
@@ -7,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -49,6 +51,15 @@ public class UserService {
 
         public Integer delete(String username){
         return usersRepository.deleteByName(username);
+        }
+        public void updateUserPs(String username, Product product){
+        usersRepository.updateUserPs(username,product);
+        }
+        public User getUser(String username){
+        return usersRepository.findByName(username);
+        }
+        public boolean checkURL(String username,String urlNamePathVariable){
+        return username.equals(urlNamePathVariable);
         }
     }
 

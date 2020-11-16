@@ -23,10 +23,10 @@ public SecurityConfig(JWTTokenFilterConfigurer jwtTokenFilterConfigurer){
     @Override
     protected void configure(HttpSecurity http) throws Exception {
         http.csrf().disable();
-
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.authorizeRequests().antMatchers("/admin/**").hasRole("ADMIN");
         //http.authorizeRequests().antMatchers("/actuator/**").hasRole("ADMIN");
+        http.authorizeRequests().antMatchers("/client/profile/{name}/**").access("hasAnyRole(\"NORMAL\",\"ADMIN\") and authentication.name == #name");
         http.authorizeRequests().antMatchers("/client/**").hasAnyRole("NORMAL","ADMIN");
         http.authorizeRequests().antMatchers("/order/*").hasRole("NORMAL");
         http.apply(jwtTokenFilterConfigurer);

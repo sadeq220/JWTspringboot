@@ -11,12 +11,18 @@ import com.paypal.base.rest.PayPalRESTException;
 import org.springframework.web.server.ResponseStatusException;
 
 import javax.annotation.PostConstruct;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 
 @Component
 public class PayPalServiceProxy {
 
     @Autowired
-    public PayPalServiceProxy(PayPalService service){this.service=service;}
+    public PayPalServiceProxy(PayPalService service) {
+        this.service=service;
+    }
         PayPalService service;
 
     final private String SUCCESS_URL = "order/pay/success";
@@ -63,8 +69,18 @@ public class PayPalServiceProxy {
                 return "success";
             }
         } catch (PayPalRESTException e) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT,"paypal payment not successfully performed",e);
+            throw new ResponseStatusException(HttpStatus.CONFLICT,e.getMessage(),e);
         }
         return "failure";
+    }
+    public String getTokenFromUrl(String urlContainsToken) {
+        URI uri= null;
+        try {
+            uri = new URI(urlContainsToken);
+        } catch (URISyntaxException e) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT,"PayPal url scheme has problem");
+        }
+        return Arrays.stream(uri.getRawQuery().split("&")).filter(s->s.startsWith("token")).map(s->s.substring(6)).collect(Collectors.joining(""));
+
     }
 }

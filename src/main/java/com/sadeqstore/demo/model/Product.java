@@ -9,6 +9,13 @@ public class Product {
     private String name;
     private Double cost;
 
+    public Product() {
+    }
+
+    //build dummy product
+    public Product(String name){
+        this.name=name;
+    }
     public String getName() {
         return name;
     }
