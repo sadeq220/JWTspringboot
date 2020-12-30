@@ -26,6 +26,7 @@ public SecurityConfig(JWTTokenFilterConfigurer jwtTokenFilterConfigurer){
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
         http.authorizeRequests().antMatchers("/admin/**").hasRole("ADMIN");
         //http.authorizeRequests().antMatchers("/actuator/**").hasRole("ADMIN");
+        //spring security expression
         http.authorizeRequests().antMatchers("/client/profile/{name}/**").access("hasAnyRole(\"NORMAL\",\"ADMIN\") and authentication.name == #name");
         http.authorizeRequests().antMatchers("/client/**").hasAnyRole("NORMAL","ADMIN");
         http.authorizeRequests().antMatchers("/order/*").hasRole("NORMAL");
